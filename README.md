@@ -16,7 +16,7 @@ notifications — the Super Island / focus notification path is not modified.
 ## Requirements
 
 - HyperOS 4 (Android 17) with SystemUI component 18.x
-- Root + LSPosed (or another libxposed API 101/102 manager)
+- Root + LSPosed (or another manager supporting libxposed API 102)
 - JDK 21 and Android SDK 37.2 to build
 
 ## Build
@@ -61,11 +61,20 @@ If it does not work, collect the log:
 adb logcat -s HyperPull
 ```
 
-The first time a row is processed, the module logs:
+On load the module confirms which methods it hooked:
+
+```text
+hooked=updateMiniWindowBar,updateFreeformTipView
+```
+
+The first time a row is processed, it logs:
 
 ```text
 ExpandableNotificationRowInjector bar=true canSlide=true miniBarVisible=true
 ```
+
+If no `HyperPull` line appears at all, the hook never installed or never fired:
+check that the scope is System UI and that the device was rebooted.
 
 - `canSlide=false` / `miniBarVisible=false` — the field was not found on this
   SystemUI version. The module failed open and changed nothing.
@@ -90,7 +99,8 @@ system files are modified.
 
 ## How it works
 
-- `HyperPullModule` registers the SystemUI scope.
+- `HyperPullModule` is the libxposed entry point; the static scope comes from
+  `META-INF/xposed/scope.list`.
 - `NotificationMiniWindowHook` hooks `updateMiniWindowBar()` and
   `updateFreeformTipView()` on `ExpandableNotificationRowInjector`.
 - After each native call, it sets `canSlide=true`, `miniBarVisible=true`, and

@@ -7,11 +7,10 @@ internal object Reflect {
     fun findField(type: Class<*>, name: String): Field? {
         var current: Class<*>? = type
         while (current != null && current != Any::class.java) {
-            val field = runCatching { current.getDeclaredField(name) }.getOrNull()
-            if (field != null) {
-                field.isAccessible = true
-                return field
-            }
+            val field = runCatching {
+                current.getDeclaredField(name).apply { isAccessible = true }
+            }.getOrNull()
+            if (field != null) return field
             current = current.superclass
         }
         return null
