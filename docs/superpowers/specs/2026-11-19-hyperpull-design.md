@@ -78,7 +78,7 @@ dan uji akhir dilakukan di mesin pengguna.
 
 ```
 android/
-  app/src/main/kotlin/dev/syoxide/notifyfloat/
+  app/src/main/kotlin/io/github/satoxyan/hyperpull/
     HyperPullModule.kt
     NotificationMiniWindowHook.kt
     Reflect.kt
