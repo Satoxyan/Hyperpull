@@ -41,7 +41,7 @@
 - Create: `android/app/src/main/resources/META-INF/xposed/module.prop`
 - Create: `android/app/src/main/resources/META-INF/xposed/scope.list`
 - Create: `android/app/src/main/resources/META-INF/xposed/java_init.list`
-- Create: `android/app/src/main/kotlin/dev/syoxide/notifyfloat/HyperPullModule.kt`
+- Create: `android/app/src/main/kotlin/io/github/satoxyan/hyperpull/HyperPullModule.kt`
 - Create: `.gitignore`
 - Reuse: `android/gradlew`, `android/gradlew.bat`, `android/gradle/wrapper/*` (sudah disalin)
 
@@ -173,7 +173,7 @@ io.github.satoxyan.hyperpull.HyperPullModule
 
 - [ ] **Step 4: Tulis entry point minimal**
 
-`android/app/src/main/kotlin/dev/syoxide/notifyfloat/HyperPullModule.kt`:
+`android/app/src/main/kotlin/io/github/satoxyan/hyperpull/HyperPullModule.kt`:
 
 ```kotlin
 package io.github.satoxyan.hyperpull
@@ -220,8 +220,8 @@ git commit -m "chore: scaffold HyperPull Xposed module"
 ### Task 2: Helper reflection yang bisa diuji di JVM
 
 **Files:**
-- Create: `android/app/src/main/kotlin/dev/syoxide/notifyfloat/Reflect.kt`
-- Test: `android/app/src/test/kotlin/dev/syoxide/notifyfloat/ReflectTest.kt`
+- Create: `android/app/src/main/kotlin/io/github/satoxyan/hyperpull/Reflect.kt`
+- Test: `android/app/src/test/kotlin/io/github/satoxyan/hyperpull/ReflectTest.kt`
 
 **Interfaces:**
 - Consumes: tidak ada.
@@ -232,7 +232,7 @@ git commit -m "chore: scaffold HyperPull Xposed module"
 
 - [ ] **Step 1: Tulis test yang gagal**
 
-`android/app/src/test/kotlin/dev/syoxide/notifyfloat/ReflectTest.kt`:
+`android/app/src/test/kotlin/io/github/satoxyan/hyperpull/ReflectTest.kt`:
 
 ```kotlin
 package io.github.satoxyan.hyperpull
@@ -350,7 +350,7 @@ Expected: PASS, 6 test.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add android/app/src/main/kotlin/dev/syoxide/notifyfloat/Reflect.kt android/app/src/test
+git add android/app/src/main/kotlin/io/github/satoxyan/hyperpull/Reflect.kt android/app/src/test
 git commit -m "feat: add reflection helper with JVM tests"
 ```
 
@@ -359,8 +359,8 @@ git commit -m "feat: add reflection helper with JVM tests"
 ### Task 3: Hook bar notifikasi normal
 
 **Files:**
-- Create: `android/app/src/main/kotlin/dev/syoxide/notifyfloat/NotificationMiniWindowHook.kt`
-- Modify: `android/app/src/main/kotlin/dev/syoxide/notifyfloat/HyperPullModule.kt`
+- Create: `android/app/src/main/kotlin/io/github/satoxyan/hyperpull/NotificationMiniWindowHook.kt`
+- Modify: `android/app/src/main/kotlin/io/github/satoxyan/hyperpull/HyperPullModule.kt`
 
 **Interfaces:**
 - Consumes: `Reflect.setBoolean(target: Any, name: String, value: Boolean): Boolean`, `Reflect.invokeNoArg(target: Any, name: String): Any?`.
@@ -470,7 +470,7 @@ Expected: `BUILD SUCCESSFUL`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add android/app/src/main/kotlin/dev/syoxide/notifyfloat
+git add android/app/src/main/kotlin/io/github/satoxyan/hyperpull
 git commit -m "feat: force notification mini-window handle for all rows"
 ```
 
