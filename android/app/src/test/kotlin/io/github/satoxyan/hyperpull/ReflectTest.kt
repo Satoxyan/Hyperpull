@@ -9,50 +9,37 @@ import org.junit.Test
 class ReflectTest {
 
     private open class Base {
-        var miniBarVisible = false
+        var inherited: Any? = "base"
     }
 
     private class Fake : Base() {
-        var canSlide = false
-
-        var boxed: Boolean? = false
-
-        fun getMiniBar(): String = "bar"
+        var value: Any? = null
     }
 
     @Test
-    fun setsPrimitiveField() {
+    fun getsField() {
+        val fake = Fake().apply { value = "x" }
+        assertEquals("x", Reflect.get(fake, "value"))
+    }
+
+    @Test
+    fun setsField() {
         val fake = Fake()
-        assertTrue(Reflect.setBoolean(fake, "canSlide", true))
-        assertTrue(fake.canSlide)
+        assertTrue(Reflect.set(fake, "value", "y"))
+        assertEquals("y", fake.value)
     }
 
     @Test
-    fun setsInheritedField() {
+    fun reachesInheritedField() {
         val fake = Fake()
-        assertTrue(Reflect.setBoolean(fake, "miniBarVisible", true))
-        assertTrue(fake.miniBarVisible)
+        assertEquals("base", Reflect.get(fake, "inherited"))
+        assertTrue(Reflect.set(fake, "inherited", "changed"))
+        assertEquals("changed", fake.inherited)
     }
 
     @Test
-    fun setsBoxedBooleanField() {
-        val fake = Fake()
-        assertTrue(Reflect.setBoolean(fake, "boxed", true))
-        assertEquals(true, fake.boxed)
-    }
-
-    @Test
-    fun missingFieldReturnsFalse() {
-        assertFalse(Reflect.setBoolean(Fake(), "doesNotExist", true))
-    }
-
-    @Test
-    fun invokeNoArgReturnsValue() {
-        assertEquals("bar", Reflect.invokeNoArg(Fake(), "getMiniBar"))
-    }
-
-    @Test
-    fun missingMethodReturnsNull() {
-        assertNull(Reflect.invokeNoArg(Fake(), "nope"))
+    fun missingFieldReturnsNull() {
+        assertNull(Reflect.get(Fake(), "doesNotExist"))
+        assertFalse(Reflect.set(Fake(), "doesNotExist", "x"))
     }
 }

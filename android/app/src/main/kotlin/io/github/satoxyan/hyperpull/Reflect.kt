@@ -16,21 +16,13 @@ internal object Reflect {
         return null
     }
 
-    fun setBoolean(target: Any, name: String, value: Boolean): Boolean {
-        val field = findField(target.javaClass, name) ?: return false
-        return runCatching {
-            if (field.type == java.lang.Boolean::class.java) {
-                field.set(target, value)
-            } else {
-                field.setBoolean(target, value)
-            }
-            true
-        }.getOrDefault(false)
+    fun get(target: Any, name: String): Any? {
+        val field = findField(target.javaClass, name) ?: return null
+        return runCatching { field.get(target) }.getOrNull()
     }
 
-    fun invokeNoArg(target: Any, name: String): Any? = runCatching {
-        val method = target.javaClass.getMethod(name)
-        method.isAccessible = true
-        method.invoke(target)
-    }.getOrNull()
+    fun set(target: Any, name: String, value: Any?): Boolean {
+        val field = findField(target.javaClass, name) ?: return false
+        return runCatching { field.set(target, value) }.isSuccess
+    }
 }

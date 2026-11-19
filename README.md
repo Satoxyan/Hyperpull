@@ -4,11 +4,14 @@ Make every normal notification on HyperOS 4 pullable into HyperOS's floating
 (small) window, not just the ones Xiaomi whitelists.
 
 HyperOS already ships the gesture: a thin `mini_window_bar` at the bottom of a
-notification row. SystemUI decides per notification whether that bar can slide,
-and apps outside Xiaomi's whitelist (for example Telegram) lose the gesture even
-though the app itself supports freeform. HyperPull hooks
-`ExpandableNotificationRowInjector` and forces `canSlide`/`miniBarVisible` true
-for every notification row.
+heads-up notification. SystemUI only answers "can this package slide?" true for
+apps in Xiaomi's whitelist, so apps like Telegram lose the gesture even though
+they support freeform. HyperPull hooks `AppMiniWindowManagerImpl.canNotificationSlide`
+and makes that package check answer true for every app.
+
+It deliberately does **not** force the bar or `canSlide` on each row. SystemUI
+keeps its own visibility rule (the bar only appears on pinned/heads-up rows), so
+no bar is added to notifications sitting in the shade.
 
 This is an Xposed module for LSPosed (libxposed API 102). It only touches normal
 notifications — the Super Island / focus notification path is not modified.
@@ -50,10 +53,10 @@ LSPosed or not.
 ## Test
 
 1. Send yourself a Telegram message (or any app that normally cannot be pulled).
-2. Open the notification shade.
-3. Pull down the small bar at the bottom of the notification.
+2. When the heads-up notification appears, pull down the small bar at its bottom.
+3. Optionally open the shade: the bar must **not** appear there.
 
-Expected: the app opens in a HyperOS floating window.
+Expected: the app opens in a HyperOS floating window from heads-up only.
 
 If it does not work, collect the log:
 
@@ -61,35 +64,32 @@ If it does not work, collect the log:
 adb logcat -s HyperPull
 ```
 
-On load the module confirms which methods it hooked:
+On load the module confirms its hook:
 
 ```text
-hooked=updateMiniWindowBar,updateFreeformTipView
-```
-
-The first time a row is processed, it logs:
-
-```text
-ExpandableNotificationRowInjector bar=true canSlide=true miniBarVisible=true
+hooked=AppMiniWindowManagerImpl.canNotificationSlide
+whitelist unlocked (2 list(s))
 ```
 
 If no `HyperPull` line appears at all, the hook never installed or never fired:
 check that the scope is System UI and that the device was rebooted.
 
-- `canSlide=false` / `miniBarVisible=false` — the field was not found on this
-  SystemUI version. The module failed open and changed nothing.
-- `bar=false` — `getMiniBar()` was not found or returned null.
-- All true but no window — SystemUI has another eligibility check after the
-  gesture. Report the log; the next step is to locate and neutralise that check.
+- `canNotificationSlide not found` — this SystemUI version renamed the class or
+  method. The module failed open and changed nothing.
+- `hooked=...` but no `whitelist unlocked` line — the settings object or its
+  whitelist fields moved. Also fail-open, nothing changed.
+- Bar shows in heads-up but the pull does not open a window — Telegram accepts
+  the gesture but SystemUI's launch step rejected it. Report the log; the next
+  step is to inspect that launch path.
 
 ## Limitations
 
 - No per-app blacklist. Apps that genuinely cannot run in freeform (for example
-  Google Authenticator) may show the bar but fail to open a window.
+  Google Authenticator) may show the bar in heads-up but fail to open a window.
 - Hooks are tied to internal SystemUI class/field names. A HyperOS update can
   rename them; the module then logs `not found` and does nothing.
-- The bar is forced visible on every row, so it can appear on rows where the
-  stock UI would hide it.
+- The bar follows the stock heads-up rule; it is not shown on rows in the
+  notification shade.
 - Built and unit-tested, but device behaviour is not verified in CI here.
 
 ## Uninstall
@@ -101,8 +101,12 @@ system files are modified.
 
 - `HyperPullModule` is the libxposed entry point; the static scope comes from
   `META-INF/xposed/scope.list`.
-- `NotificationMiniWindowHook` hooks `updateMiniWindowBar()` and
-  `updateFreeformTipView()` on `ExpandableNotificationRowInjector`.
-- After each native call, it sets `canSlide=true`, `miniBarVisible=true`, and
-  makes the mini bar visible with full alpha.
+- `MiniWindowWhitelistHook` hooks
+  `AppMiniWindowManagerImpl.canNotificationSlide(String, PendingIntent)`.
+- Before the native call, it replaces `mAllowNotificationSlide` /
+  `mAllowNotificationSlideLocal` with a read-only list view that reports every
+  non-blank package as allowed. The other gates (activity PendingIntent, feature
+  flag, keyguard/window state) stay native.
+- SystemUI then computes `canSlide` and bar visibility itself, so the bar still
+  only shows on pinned/heads-up rows.
 - `Reflect` contains the fail-open reflection helpers, covered by JVM tests.

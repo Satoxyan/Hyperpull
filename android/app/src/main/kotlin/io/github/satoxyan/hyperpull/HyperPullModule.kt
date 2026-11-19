@@ -8,6 +8,6 @@ class HyperPullModule : XposedModule() {
     override fun onPackageLoaded(param: PackageLoadedParam) {
         if (param.packageName != "com.android.systemui") return
         log(android.util.Log.INFO, "HyperPull", "loaded in ${param.packageName}")
-        NotificationMiniWindowHook.install(this, param.defaultClassLoader)
+        MiniWindowWhitelistHook.install(this, param.defaultClassLoader)
     }
 }

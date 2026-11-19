@@ -18,25 +18,25 @@ di dalam `status_bar_notification_row`) dan gesture dikendalikan field
 
 ## Pendekatan terpilih
 
-**A — paksa di `ExpandableNotificationRowInjector`.**
+**Awalnya A — paksa state di `ExpandableNotificationRowInjector`.** Hook
+`updateMiniWindowBar()` / `updateFreeformTipView()` lalu paksa `canSlide`,
+`miniBarVisible`, dan `getMiniBar().visibility = VISIBLE`.
 
-Hook `com.android.systemui.statusbar.notification.row.ExpandableNotificationRowInjector`:
+**Revisi v0.2.0 — buka whitelist native.** Uji perangkat menunjukkan cara di
+atas terlalu lebar: `updateMiniWindowBar()` asli hanya menampilkan bar saat row
+`isPinned` / modal (heads-up), sedangkan paksaan `miniBarVisible` + `VISIBLE`
+membuat bar muncul juga di panel notifikasi.
 
-- `updateMiniWindowBar()` — setelah method asli jalan.
-- `updateFreeformTipView()` (no-arg) — setelah method asli jalan, karena method
-  ini juga menimpa `canSlide` (terlihat dari pemakaian di repo acuan).
+Perbaikan: hook
+`AppMiniWindowManagerImpl.canNotificationSlide(String, PendingIntent)` dan ganti
+field `mAllowNotificationSlide` / `mAllowNotificationSlideLocal` dengan view
+read-only yang menganggap semua package non-blank diizinkan. Gate native lain
+(PendingIntent activity, feature flag, keyguard/window state) tetap berjalan,
+dan SystemUI sendiri yang memutuskan `canSlide` serta visibilitas bar. Hasilnya
+bar hanya muncul di heads-up, sama seperti stok, tapi untuk semua app.
 
-Setiap kali, paksa:
-
-- `getMiniBar()` → `visibility = VISIBLE`, `alpha = 1f`
-- field `canSlide = true`
-- field `miniBarVisible = true`
-
-Semua reflection dibungkus `runCatching` dan fail-open: kalau method/field tidak
-ada, modul diam dan tidak mengubah apa pun.
-
-Alternatif yang ditolak: (B) mencari method penentu kelayakan di SystemUI —
-butuh decompile perangkat; (C) membuat gesture/peluncur freeform sendiri —
+Alternatif yang ditolak: (B) menghitung sendiri kondisi heads-up di row —
+menduplikasi logika native; (C) membuat gesture/peluncur freeform sendiri —
 terlalu besar dan rapuh.
 
 ## Scope
@@ -60,9 +60,9 @@ terlalu besar dan rapuh.
 ## Risiko utama
 
 Sistem bisa tetap mengecek kelayakan saat gesture dilepas, sehingga bar bergerak
-tapi window tidak terbuka. Kalau itu terjadi, langkah berikutnya adalah
-pendekatan B. Modul v1 mencatat nilai `canSlide`/`miniBarVisible`, keberadaan
-`getMiniBar()`, dan nama class ke log sekali per class agar diagnosis cepat.
+tapi window tidak terbuka. Kalau itu terjadi, langkah berikutnya adalah menelusuri
+jalur peluncuran freeform di SystemUI. Modul mencatat hasil hook dan status buka
+whitelist ke log agar diagnosis cepat.
 
 ## Verifikasi
 
@@ -80,7 +80,8 @@ dan uji akhir dilakukan di mesin pengguna.
 android/
   app/src/main/kotlin/io/github/satoxyan/hyperpull/
     HyperPullModule.kt
-    NotificationMiniWindowHook.kt
+    MiniWindowWhitelistHook.kt
+    NotificationSlideWhitelist.kt
     Reflect.kt
   app/src/main/resources/META-INF/xposed/
     module.prop  scope.list  java_init.list
