@@ -16,6 +16,14 @@ no bar is added to notifications sitting in the shade.
 This is an Xposed module for LSPosed (libxposed API 102). It only touches normal
 notifications — the Super Island / focus notification path is not modified.
 
+It also unlocks HyperOS's simultaneous freeform window cap from 0.3.0. HyperOS
+keeps the count in `MiuiFreeFormStackDisplayStrategy.getMaxMiuiFreeFormStackCount`
+and exits the bottom window when a new one would exceed it, so opening a third
+window replaces the first. The module returns a high count, disables the
+per-package `shouldStopStartFreeform` gate, and removes the game-window
+exclusivity rule. On Android 16 / HyperOS 4 that method is private; the scan
+matches by name across `declaredMethods`.
+
 ## Requirements
 
 - HyperOS 4 (Android 17) with SystemUI component 18.x
@@ -44,7 +52,8 @@ adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
 1. Open LSPosed, enable **HyperPull**.
-2. Set its scope to **System UI** (`com.android.systemui`) only.
+2. Set its scope to **System UI** (`com.android.systemui`) and **System
+   Framework** (`system`).
 3. Reboot.
 
 The module has no launcher icon and no settings screen; it is either enabled in
@@ -57,6 +66,28 @@ LSPosed or not.
 3. Optionally open the shade: the bar must **not** appear there.
 
 Expected: the app opens in a HyperOS floating window from heads-up only.
+
+### Freeform window limit
+
+Open three different apps in floating windows. None of the earlier ones should
+close. The log prints the count on every stack add:
+
+```text
+loaded in system_server
+freeform count unlocked (1 method(s))
+freeform start gate unlocked
+game freeform exclusivity unlocked
+freeform max getMaxMiuiFreeFormStackCount(com.example.app) -> 256
+```
+
+If the third window still replaces one, the `freeform max ...` line tells you
+which gate is active:
+
+- No `loaded in system_server` line — System Framework scope is missing or the
+  module did not load in `system_server`.
+- `freeform count method not found` — HyperOS renamed the count method.
+- `freeform max ... -> 256` appears but a window still closes — the cap now
+  lives elsewhere; report the log and the caller stack.
 
 If it does not work, collect the log:
 
@@ -110,3 +141,10 @@ system files are modified.
 - SystemUI then computes `canSlide` and bar visibility itself, so the bar still
   only shows on pinned/heads-up rows.
 - `Reflect` contains the fail-open reflection helpers, covered by JVM tests.
+- `FreeformLimitHook` runs in `system_server` (scope `system`) and hooks
+  `MiuiFreeFormStackDisplayStrategy.getMaxMiuiFreeFormStackCount` (by name, so
+  the Android 16 private visibility is fine), `shouldStopStartFreeform`, and the
+  game-only `MiuiFreeFormActivityStack.isGameApp` check.
+- `isGameApp` is only overridden when the caller is one of the window-exiting
+  paths; `needForegroundPin` keeps the original answer so game windows stay
+  pinnable.

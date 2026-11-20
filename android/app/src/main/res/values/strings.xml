@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HyperPull</string>
-    <string name="module_description">Makes every normal notification pullable into a HyperOS floating window.</string>
+    <string name="module_description">Pulls any notification into a HyperOS floating window and unlocks the freeform window limit.</string>
 </resources>
