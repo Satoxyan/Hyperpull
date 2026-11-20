@@ -24,6 +24,8 @@ per-package `shouldStopStartFreeform` gate, and removes the game-window
 exclusivity rule. On Android 16 / HyperOS 4 that method is private; the scan
 matches by name across `declaredMethods`.
 
+See [CHANGELOG.md](CHANGELOG.md) for the feature history.
+
 ## Requirements
 
 - HyperOS 4 (Android 17) with SystemUI component 18.x
@@ -147,3 +149,10 @@ system files are modified.
 - `isGameApp` is only overridden when the caller is one of the window-exiting
   paths; `needForegroundPin` keeps the original answer so game windows stay
   pinnable.
+
+## Credits
+
+- [HyperIsland](https://github.com/1812z/HyperIsland) — reference for HyperOS
+  notification and mini-window behaviour.
+- [MaxFreeForm](https://github.com/YifePlayte/MaxFreeForm) — reference for the
+  freeform limit hooks and the `miuiwindowdecor` caption hooks.
