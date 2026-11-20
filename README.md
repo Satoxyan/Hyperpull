@@ -70,24 +70,23 @@ Expected: the app opens in a HyperOS floating window from heads-up only.
 ### Freeform window limit
 
 Open three different apps in floating windows. None of the earlier ones should
-close. The log prints the count on every stack add:
+close. The log only reports install status:
 
 ```text
 loaded in system_server
-freeform count unlocked (1 method(s))
+freeform count unlocked (N method(s))
 freeform start gate unlocked
 game freeform exclusivity unlocked
-freeform max getMaxMiuiFreeFormStackCount(com.example.app) -> 256
 ```
 
-If the third window still replaces one, the `freeform max ...` line tells you
-which gate is active:
+If the third window still replaces one, the `loaded in system_server` line tells
+you whether the hook loaded at all:
 
 - No `loaded in system_server` line — System Framework scope is missing or the
   module did not load in `system_server`.
 - `freeform count method not found` — HyperOS renamed the count method.
-- `freeform max ... -> 256` appears but a window still closes — the cap now
-  lives elsewhere; report the log and the caller stack.
+- Hooks installed but a window still closes — the cap now lives elsewhere;
+  report the log and the caller stack.
 
 If it does not work, collect the log:
 

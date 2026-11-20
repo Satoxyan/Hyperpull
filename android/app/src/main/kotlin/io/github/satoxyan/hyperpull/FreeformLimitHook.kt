@@ -53,15 +53,7 @@ internal object FreeformLimitHook {
         val countMethods = strategy.declaredMethods.filter { it.name in COUNT_METHODS }
         countMethods.forEach { method ->
             runCatching {
-                module.hook(method).intercept { chain ->
-                    val pkg = runCatching { chain.getArg(0) as? String }.getOrNull()
-                    module.log(
-                        android.util.Log.INFO,
-                        TAG,
-                        "freeform max ${method.name}($pkg) -> $UNLOCKED",
-                    )
-                    UNLOCKED
-                }
+                module.hook(method).intercept { UNLOCKED }
             }.onFailure {
                 module.log(android.util.Log.INFO, TAG, "hook ${method.name} failed — ${it.message}")
             }
